@@ -1,68 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Dashboard con D3.js</title>
+  <meta charset="UTF-8">
+  <title>Dashboard de Gráficos D3</title>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f4f4f4;
+      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 2rem;
     }
-    .chart-container {
-      margin-bottom: 40px;
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
     }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     svg {
-      background: lightgrey;
       border: 1px solid #ccc;
+      background-color: #e9ecef;
+      margin-top: 10px;
+    }
+
+    h3 {
+      margin: 0;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: #343a40;
     }
   </style>
 </head>
 <body>
-  <h1>Dashboard Interactivo con D3.js</h1>
+  <h1 style="text-align:center;">Dashboard Interactivo con D3.js</h1>
+  <div class="container">
+    <!-- Coordenadas -->
+    <div class="card">
+      <h3>Coordenadas del Mouse</h3>
+      <svg id="coords" width="300" height="300"></svg>
+    </div>
 
-  <!-- Coordenadas del mouse -->
-  <div class="chart-container">
-    <h3>1. Coordenadas del Mouse</h3>
-    <svg id="coords" width="300" height="300"></svg>
-  </div>
+    <!-- Brush con CSV -->
+    <div class="card">
+      <h3>Brush con Dos Colores</h3>
+      <svg id="brush1" width="300" height="300"></svg>
+      <svg id="brush2" width="300" height="300"></svg>
+    </div>
 
-  <!-- Brush con datos desde CSV -->
-  <div class="chart-container">
-    <h3>2. Brush con Datos desde CSV</h3>
-    <svg id="brush1" width="300" height="300"></svg>
-    <svg id="brush2" width="300" height="300"></svg>
-  </div>
+    <!-- Drag and Drop -->
+    <div class="card">
+      <h3>Drag and Drop</h3>
+      <svg id="dragdrop" width="600" height="200">
+        <circle cx="100" cy="100" r="20" fill="red"></circle>
+        <circle cx="300" cy="100" r="20" fill="green"></circle>
+        <circle cx="500" cy="100" r="20" fill="blue"></circle>
+      </svg>
+    </div>
 
-  <!-- Drag & Drop -->
-  <div class="chart-container">
-    <h3>3. Drag and Drop</h3>
-    <svg id="dragdrop" width="600" height="200">
-      <circle cx="100" cy="100" r="20" fill="red"></circle>
-      <circle cx="300" cy="100" r="20" fill="green"></circle>
-      <circle cx="500" cy="100" r="20" fill="blue"></circle>
-    </svg>
-  </div>
+    <!-- Stagger Bars -->
+    <div class="card">
+      <h3>Stagger Bars</h3>
+      <svg id="stagger" width="600" height="300"></svg>
+    </div>
 
-  <!-- Stagger Bars -->
-  <div class="chart-container">
-    <h3>4. Gráfico Stagger Interactivo</h3>
-    <svg id="stagger" width="600" height="300"></svg>
-  </div>
-
-  <!-- Lissajous -->
-  <div class="chart-container">
-    <h3>5. Trayectoria Lissajous</h3>
-    <svg id="lissajous" width="300" height="300"></svg>
+    <!-- Lissajous Curve -->
+    <div class="card">
+      <h3>Curva de Lissajous</h3>
+      <svg id="lissajous" width="300" height="300"></svg>
+    </div>
   </div>
 
   <script>
-    // 1. Coordenadas del Mouse
+    // === Coordenadas ===
     function coordsPixels(selector) {
       var txt = d3.select(selector).append('text')
-        .attr('font-family', 'Arial')
+        .attr('font-family', 'Arial, sans-serif')
         .attr('font-size', '12px')
         .attr('fill', 'black');
 
@@ -71,70 +94,75 @@
         .on('mousemove', function() {
           var pt = d3.mouse(svg.node());
           txt.attr('x', 18 + pt[0])
-             .attr('y', 6 + pt[1])
-             .text('(' + Math.round(pt[0]) + ', ' + Math.round(pt[1]) + ')');
+            .attr('y', 6 + pt[1])
+            .text('(' + Math.round(pt[0]) + ', ' + Math.round(pt[1]) + ')');
         })
         .on('mouseleave', function() {
           txt.text('');
         });
     }
-    coordsPixels("#coords");
 
-    // 2. Brush con datos CSV
-    d3.csv("https://github.com/AnaPauR/primerinformed3/blob/8b2b336def0cb6c941977a787a38c3bba94b10fc/dense.csv").then(function(data) {
-      var svg1 = d3.select("#brush1"),
-          svg2 = d3.select("#brush2");
+    coordsPixels('#coords');
 
-      var sc1 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "red"]);
-      var sc2 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "blue"]);
+    // === Brush con CSV ===
+    fetch("data/dense.csv")
+      .then(res => res.text())
+      .then(text => {
+        const rows = d3.csvParse(text);
+        const data = rows.map(d => ({ A: +d.A, B: +d.B }));
 
-      var cs1 = drawCircles(svg1, data, d => +d.A, d => +d.B, sc1);
-      var cs2 = drawCircles(svg2, data, d => +d.A, d => +d.B, sc2);
+        const svg1 = d3.select("#brush1"),
+              svg2 = d3.select("#brush2");
 
-      svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+        const sc1 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "red"]);
+        const sc2 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "blue"]);
 
-      function drawCircles(svg, data, accX, accY, sc) {
-        var color = sc(Infinity);
-        return svg.selectAll("circle")
-          .data(data)
-          .enter()
-          .append("circle")
-          .attr("r", 5)
-          .attr("cx", d => accX(d))
-          .attr("cy", d => accY(d))
-          .attr("fill", color)
-          .attr("fill-opacity", 0.4);
-      }
+        const cs1 = drawCircles(svg1, data, d => d.A, d => d.B, sc1);
+        const cs2 = drawCircles(svg2, data, d => d.A, d => d.B, sc2);
 
-      function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
-        svg.attr("cursor", "crosshair")
-          .on("mousemove", function() {
-            var pt = d3.mouse(svg.node());
-            cs1.attr("fill", function(d, i) {
-              var r = Math.hypot(pt[0] - d3.select(this).attr("cx"), pt[1] - d3.select(this).attr("cy"));
-              data[i]["r"] = r;
-              return sc1(r);
-            });
-            cs2.attr("fill", (d, i) => sc2(data[i]["r"]));
-          })
-          .on("mouseleave", function() {
-            cs1.attr("fill", sc1(Infinity));
-            cs2.attr("fill", sc2(Infinity));
+        svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+      });
+
+    function drawCircles(svg, data, accX, accY, sc) {
+      return svg.selectAll("circle")
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("r", 5)
+        .attr("cx", accX)
+        .attr("cy", accY)
+        .attr("fill", sc(Infinity))
+        .attr("fill-opacity", 0.4);
+    }
+
+    function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+      svg.attr("cursor", "crosshair")
+        .on("mousemove", function() {
+          const pt = d3.mouse(svg.node());
+          cs1.attr("fill", function(d, i) {
+            const r = Math.hypot(pt[0] - this.cx.baseVal.value, pt[1] - this.cy.baseVal.value);
+            data[i].r = r;
+            return sc1(r);
           });
-      }
-    });
+          cs2.attr("fill", (d, i) => sc2(data[i].r));
+        })
+        .on("mouseleave", function() {
+          cs1.attr("fill", sc1(Infinity));
+          cs2.attr("fill", sc2(Infinity));
+        });
+    }
 
-    // 3. Drag and Drop
+    // === Drag and Drop ===
     function makeDragDrop() {
-      var widget = undefined, color = undefined;
+      let widget = undefined, color = undefined;
 
-      var drag = d3.drag()
+      const drag = d3.drag()
         .on("start", function() {
           color = d3.select(this).attr("fill");
           widget = d3.select(this).attr("fill", "lime");
         })
         .on("drag", function() {
-          var pt = d3.mouse(d3.select("#dragdrop").node());
+          const pt = d3.mouse(d3.select("#dragdrop").node());
           widget.attr("cx", pt[0]).attr("cy", pt[1]);
         })
         .on("end", function() {
@@ -144,20 +172,17 @@
 
       drag(d3.select("#dragdrop").selectAll("circle"));
     }
-    makeDragDrop();
 
-    // 4. Gráfico Stagger
+    setTimeout(makeDragDrop, 100);
+
+    // === Stagger ===
     function makeStagger() {
       let ds1 = [2, 1, 3, 5, 7, 8, 9, 9, 9, 8, 7, 5, 3, 1, 2];
       let ds2 = [8, 9, 8, 7, 5, 3, 2, 1, 2, 3, 5, 7, 8, 9, 8];
 
-      const n = ds1.length;
-      const mx = d3.max([...ds1, ...ds2]);
-
       const svg = d3.select("#stagger");
-
-      const scX = d3.scaleLinear().domain([0, n]).range([50, 540]);
-      const scY = d3.scaleLinear().domain([0, mx]).range([250, 50]);
+      const scX = d3.scaleLinear().domain([0, ds1.length]).range([50, 540]);
+      const scY = d3.scaleLinear().domain([0, d3.max([...ds1, ...ds2])]).range([250, 50]);
 
       svg.selectAll("line")
         .data(ds1)
@@ -180,21 +205,21 @@
           .attr("y2", d => scY(d));
       });
     }
+
     makeStagger();
 
-    // 5. Lissajous
-    (function makeLissajous() {
-      var svg = d3.select("#lissajous");
+    // === Lissajous ===
+    function makeLissajous() {
+      const svg = d3.select("#lissajous");
 
-      var a = 1.9, b = 3.2;
-      var omega = 2 * Math.PI / 10000;
+      const a = 1.9, b = 3.2;
+      const omega = 2 * Math.PI / 10000;
+      let prvX = 150 + 100, prvY = 150;
 
-      var prvX = 150 + 100, prvY = 150;
-
-      var timer = d3.timer(function(t) {
-        var phi = omega * t;
-        var crrX = 150 + 100 * Math.cos(a * phi);
-        var crrY = 150 + 100 * Math.sin(b * phi);
+      const timer = d3.timer(t => {
+        const phi = omega * t;
+        const crrX = 150 + 100 * Math.cos(a * phi);
+        const crrY = 150 + 100 * Math.sin(b * phi);
 
         svg.selectAll("line")
           .each(function() { this.bogus_opacity *= 0.99; })
@@ -211,9 +236,11 @@
         prvX = crrX;
         prvY = crrY;
 
-        if (t > 120000) { timer.stop(); }
+        if (t > 120000) timer.stop();
       });
-    })();
+    }
+
+    makeLissajous();
   </script>
 </body>
 </html>
