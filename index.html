@@ -105,7 +105,7 @@
     coordsPixels('#coords');
 
     // === Brush con CSV ===
-    fetch("data/dense.csv")
+    fetch("https://github.com/AnaPauR/primerinformed3/blob/0f3741e0ab1662ba60e4f0bad626f8ddc0958c2d/dense.csv")
       .then(res => res.text())
       .then(text => {
         const rows = d3.csvParse(text);
