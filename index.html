@@ -1,150 +1,180 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard de Gráficos D3</title>
-  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizaciones Interactivas D3.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
   <style>
     body {
-      background-color: #f8f9fa;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+      min-height: 100vh;
       margin: 0;
-      padding: 2rem;
     }
-
     .container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 20px;
     }
-
-    .card {
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 1rem;
+    .visualization-section {
+      margin-bottom: 48px;
+      padding: 28px 20px;
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-
-    svg {
-      border: 1px solid #ccc;
-      background-color: #e9ecef;
-      margin-top: 10px;
+    .visualization-section > h2 {
+      text-align: center;
+      color: #2d2d2d;
+      font-size: 1.5em;
+      margin-bottom: 18px;
+      font-weight: 600;
     }
-
-    h3 {
-      margin: 0;
-      margin-bottom: 10px;
-      font-size: 1.1rem;
-      color: #343a40;
+    .visualization-section > p {
+      text-align: center;
+      color: #2d2d2d;
+      font-size: 1em;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+    .visualization-section svg {
+      display: block;
+      margin: 0 auto;
+      background: #f5f7fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(50, 50, 50, 0.9);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+    .Ana-title {
+      text-align: center;
+      font-size: 2.2em;
+      font-weight: 800;
+      margin-top: 32px;
+      margin-bottom: 38px;
+      color: #2b2b2b;
     }
   </style>
 </head>
 <body>
-  <h1 style="text-align:center;">Dashboard Interactivo con D3.js</h1>
   <div class="container">
-    <!-- Coordenadas -->
-    <div class="card">
-      <h3>Coordenadas del Mouse</h3>
-      <svg id="coords" width="300" height="300"></svg>
+    <h1 class="Ana-title">D3.js Visualization</h1>
+    <p class="Ana-title">Ana Paula Ramírez Romero</p>
+
+    <div id="coords" class="visualization-section">
+      <h2>Pixel Coordinates</h2>
+      <svg width="300" height="300"></svg>
     </div>
 
-    <!-- Brush con CSV -->
-    <div class="card">
-      <h3>Brush con Dos Colores</h3>
-      <svg id="brush1" width="300" height="300"></svg>
-      <svg id="brush2" width="300" height="300"></svg>
+    <div id="brushContainer" class="visualization-section">
+      <h2>Brush Visualization</h2>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <svg id="brush1" width="300" height="300"></svg>
+        <svg id="brush2" width="300" height="300"></svg>
+      </div>
     </div>
 
-    <!-- Drag and Drop -->
-    <div class="card">
-      <h3>Drag and Drop</h3>
+    <div id="dragdropContainer" class="visualization-section">
+      <h2>Drag and Drop</h2>
       <svg id="dragdrop" width="600" height="200">
-        <circle cx="100" cy="100" r="20" fill="red"></circle>
-        <circle cx="300" cy="100" r="20" fill="green"></circle>
-        <circle cx="500" cy="100" r="20" fill="blue"></circle>
+        <circle cx="100" cy="100" r="20" fill="#4a90e2"></circle>
+        <circle cx="300" cy="100" r="20" fill="#50e3c2"></circle>
+        <circle cx="500" cy="100" r="20" fill="#9013fe"></circle>
       </svg>
     </div>
 
-    <!-- Stagger Bars -->
-    <div class="card">
-      <h3>Stagger Bars</h3>
+    <div id="staggerContainer" class="visualization-section">
+      <h2>Stagger Animation</h2>
       <svg id="stagger" width="600" height="300"></svg>
     </div>
 
-    <!-- Lissajous Curve -->
-    <div class="card">
-      <h3>Curva de Lissajous</h3>
+    <div id="lissajousContainer" class="visualization-section">
+      <h2>Lissajous Curve</h2>
       <svg id="lissajous" width="300" height="300"></svg>
     </div>
   </div>
 
+  <div class="tooltip" id="tooltip"></div>
+
   <script>
-    // === Coordenadas ===
+    const tooltip = d3.select('#tooltip');
+
     function coordsPixels(selector) {
       var txt = d3.select(selector).append('text')
-        .attr('font-family', 'Arial, sans-serif')
-        .attr('font-size', '12px')
-        .attr('fill', 'black');
-
-      var svg = d3.select(selector)
-        .attr('cursor', 'crosshair')
-        .on('mousemove', function() {
-          var pt = d3.mouse(svg.node());
-          txt.attr('x', 18 + pt[0])
-            .attr('y', 6 + pt[1])
-            .text('(' + Math.round(pt[0]) + ', ' + Math.round(pt[1]) + ')');
-        })
-        .on('mouseleave', function() {
-          txt.text('');
+        .attr('font-size', 18)
+        .attr('font-family', 'monospace')
+        .attr('fill', '#333');
+      var svg = d3.select(selector).attr('cursor', 'crosshair')
+        .on('mousemove', function(event) {
+          var pt = d3.pointer(event, svg.node());
+          txt.attr('x', 18+pt[0]).attr('y', 6+pt[1])
+            .text(Math.round(pt[0]) + ',' + Math.round(pt[1]));
         });
     }
 
-    coordsPixels('#coords');
-
-    // === Brush con CSV ===
-    fetch("https://github.com/AnaPauR/primerinformed3/blob/0f3741e0ab1662ba60e4f0bad626f8ddc0958c2d/dense.csv")
-      .then(res => res.text())
-      .then(text => {
-        const rows = d3.csvParse(text);
-        const data = rows.map(d => ({ A: +d.A, B: +d.B }));
-
+    function makeBrush() {
+      d3.csv("dense.csv").then(data => {
         const svg1 = d3.select("#brush1"),
               svg2 = d3.select("#brush2");
 
-        const sc1 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "red"]);
-        const sc2 = d3.scaleLinear().domain([0, 10, 50]).range(["lime", "yellow", "blue"]);
+        const scBlue1 = d3.scaleLinear()
+          .domain([0, 30, 60])
+          .range(["#cce4f6", "#5a9bd4", "#1d4e89"]);
 
-        const cs1 = drawCircles(svg1, data, d => d.A, d => d.B, sc1);
-        const cs2 = drawCircles(svg2, data, d => d.A, d => d.B, sc2);
+        const scBlue2 = d3.scaleLinear()
+          .domain([0, 30, 60])
+          .range(["#d9ecf2", "#72a8c1", "#244f75"]);
 
-        svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+        const cs1 = drawCircles(svg1, data, d => +d["A"], d => +d["B"], scBlue1);
+        const cs2 = drawCircles(svg2, data, d => +d["A"], d => +d["B"], scBlue2);
+
+        svg1.call(installBrushHandler, data, cs1, cs2, scBlue1, scBlue2);
+        svg2.call(installBrushHandler, data, cs1, cs2, scBlue1, scBlue2);
       });
+    }
 
     function drawCircles(svg, data, accX, accY, sc) {
       return svg.selectAll("circle")
         .data(data)
         .enter()
         .append("circle")
-        .attr("r", 5)
+        .attr("r", 6)
         .attr("cx", accX)
         .attr("cy", accY)
         .attr("fill", sc(Infinity))
-        .attr("fill-opacity", 0.4);
+        .attr("fill-opacity", 0.7)
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 1);
     }
 
-    function installHandlers(svg, data, cs1, cs2, sc1, sc2) {
+    function installBrushHandler(svg, data, cs1, cs2, sc1, sc2) {
       svg.attr("cursor", "crosshair")
-        .on("mousemove", function() {
-          const pt = d3.mouse(svg.node());
+        .on("mousemove", function(event) {
+          const pt = d3.pointer(event, svg.node());
+
           cs1.attr("fill", function(d, i) {
-            const r = Math.hypot(pt[0] - this.cx.baseVal.value, pt[1] - this.cy.baseVal.value);
-            data[i].r = r;
+            const r = Math.hypot(pt[0] - +d3.select(this).attr("cx"), pt[1] - +d3.select(this).attr("cy"));
+            data[i]["r"] = r;
             return sc1(r);
           });
-          cs2.attr("fill", (d, i) => sc2(data[i].r));
+
+          cs2.attr("fill", function(d, i) {
+            return sc2(data[i]["r"]);
+          });
         })
         .on("mouseleave", function() {
           cs1.attr("fill", sc1(Infinity));
@@ -152,95 +182,86 @@
         });
     }
 
-    // === Drag and Drop ===
     function makeDragDrop() {
-      let widget = undefined, color = undefined;
-
-      const drag = d3.drag()
-        .on("start", function() {
-          color = d3.select(this).attr("fill");
-          widget = d3.select(this).attr("fill", "lime");
-        })
-        .on("drag", function() {
-          const pt = d3.mouse(d3.select("#dragdrop").node());
-          widget.attr("cx", pt[0]).attr("cy", pt[1]);
-        })
-        .on("end", function() {
-          widget.attr("fill", color);
-          widget = undefined;
-        });
-
-      drag(d3.select("#dragdrop").selectAll("circle"));
+      const svg = d3.select("#dragdrop");
+      svg.selectAll("circle")
+        .call(d3.drag()
+          .on("start", function() {
+            d3.select(this).raise().attr("stroke", "#222").attr("stroke-width", 2);
+          })
+          .on("drag", function(event) {
+            d3.select(this)
+              .attr("cx", event.x)
+              .attr("cy", event.y);
+          })
+          .on("end", function() {
+            d3.select(this).attr("stroke", null).attr("stroke-width", null);
+          })
+        );
     }
 
-    setTimeout(makeDragDrop, 100);
-
-    // === Stagger ===
     function makeStagger() {
-      let ds1 = [2, 1, 3, 5, 7, 8, 9, 9, 9, 8, 7, 5, 3, 1, 2];
-      let ds2 = [8, 9, 8, 7, 5, 3, 2, 1, 2, 3, 5, 7, 8, 9, 8];
-
+      let ds1 = [2,1,3,5,7,8,9,9,9,8,7,5,3,1,2];
+      let ds2 = [8,9,8,7,5,3,2,1,2,3,5,7,8,9,8];
+      const n = ds1.length;
       const svg = d3.select("#stagger");
-      const scX = d3.scaleLinear().domain([0, ds1.length]).range([50, 540]);
-      const scY = d3.scaleLinear().domain([0, d3.max([...ds1, ...ds2])]).range([250, 50]);
+      const scX = d3.scaleLinear().domain([0,n]).range([50,540]);
+      const scY = d3.scaleLinear().domain([0, d3.max([...ds1, ...ds2])]).range([250,50]);
 
       svg.selectAll("line")
-        .data(ds1)
-        .enter()
-        .append("line")
-        .attr("stroke", "red")
-        .attr("stroke-width", 20)
-        .attr("x1", (d, i) => scX(i))
-        .attr("y1", scY(0))
-        .attr("x2", (d, i) => scX(i))
-        .attr("y2", d => scY(d));
+        .data(ds1).enter().append("line")
+        .attr("stroke", "#4a90e2").attr("stroke-width", 20).attr("stroke-linecap", "round")
+        .attr("x1", (d,i)=>scX(i)).attr("y1", scY(0))
+        .attr("x2", (d,i)=>scX(i)).attr("y2", d=>scY(d));
 
-      svg.on("click", function () {
+      svg.on("click", () => {
         [ds1, ds2] = [ds2, ds1];
-        svg.selectAll("line")
-          .data(ds1)
-          .transition()
-          .duration(1000)
-          .delay((d, i) => 200 * i)
-          .attr("y2", d => scY(d));
+        svg.selectAll("line").data(ds1)
+          .transition().duration(1000).delay((d,i)=>200*i)
+          .attr("y2", d=>scY(d))
+          .attr("stroke", d => d > 5 ? "#50e3c2" : "#9013fe");
       });
     }
 
-    makeStagger();
-
-    // === Lissajous ===
     function makeLissajous() {
       const svg = d3.select("#lissajous");
-
-      const a = 1.9, b = 3.2;
-      const omega = 2 * Math.PI / 10000;
-      let prvX = 150 + 100, prvY = 150;
+      const a = 1.9, b = 3.2, omega = 2*Math.PI/10000;
+      let phi, prvX = 250, prvY = 150;
 
       const timer = d3.timer(t => {
-        const phi = omega * t;
-        const crrX = 150 + 100 * Math.cos(a * phi);
-        const crrY = 150 + 100 * Math.sin(b * phi);
+        phi = omega * t;
+        const x = 150 + 100 * Math.cos(a * phi);
+        const y = 150 + 100 * Math.sin(b * phi);
 
         svg.selectAll("line")
-          .each(function() { this.bogus_opacity *= 0.99; })
-          .attr("stroke-opacity", function() { return this.bogus_opacity; })
-          .filter(function() { return this.bogus_opacity < 0.05; })
+          .each(function() { this.bogus_opacity *= .99 })
+          .attr("stroke-opacity", function() { return this.bogus_opacity })
+          .filter(function() { return this.bogus_opacity < 0.05 })
           .remove();
 
         svg.append("line")
-          .each(function() { this.bogus_opacity = 1.0; })
+          .each(function() { this.bogus_opacity = 1.0 })
           .attr("x1", prvX).attr("y1", prvY)
-          .attr("x2", crrX).attr("y2", crrY)
-          .attr("stroke", "green").attr("stroke-width", 2);
+          .attr("x2", x).attr("y2", y)
+          .attr("stroke", d3.interpolateRainbow(phi / (2 * Math.PI)))
+          .attr("stroke-width", 2);
 
-        prvX = crrX;
-        prvY = crrY;
+        prvX = x;
+        prvY = y;
 
-        if (t > 120000) timer.stop();
+        if (t > 120e3) timer.stop();
       });
     }
 
-    makeLissajous();
+    function initVisualizations() {
+      coordsPixels('#coords svg');
+      makeBrush();
+      makeDragDrop();
+      makeStagger();
+      makeLissajous();
+    }
+
+    document.addEventListener('DOMContentLoaded', initVisualizations);
   </script>
 </body>
 </html>
