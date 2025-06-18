@@ -127,24 +127,18 @@
     }
 
     function makeBrush() {
-      d3.csv("dense.csv").then(data => {
-        const svg1 = d3.select("#brush1"),
-              svg2 = d3.select("#brush2");
-
-        const scBlue1 = d3.scaleLinear()
-          .domain([0, 30, 60])
-          .range(["#cce4f6", "#5a9bd4", "#1d4e89"]);
-
-        const scBlue2 = d3.scaleLinear()
-          .domain([0, 30, 60])
-          .range(["#d9ecf2", "#72a8c1", "#244f75"]);
-
-        const cs1 = drawCircles(svg1, data, d => +d["A"], d => +d["B"], scBlue1);
-        const cs2 = drawCircles(svg2, data, d => +d["A"], d => +d["B"], scBlue2);
-
-        svg1.call(installBrushHandler, data, cs1, cs2, scBlue1, scBlue2);
-        svg2.call(installBrushHandler, data, cs1, cs2, scBlue1, scBlue2);
-      });
+            d3.csv("dense.csv").then(function(data) {
+                var svg1 = d3.select("#brush1"), svg2 = d3.select("#brush2");
+                var sc1 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["#38ada9", "#f6d365", "#ff6f91"]);
+                var sc2 = d3.scaleLinear()
+                    .domain([0, 10, 50])
+                    .range(["#6a89cc", "#fbc2eb", "#fda085"]);
+                var cs1 = drawCircles(svg1, data, d => +d["A"], d => +d["B"], sc1);
+                var cs2 = drawCircles(svg2, data, d => +d["A"], d => +d["B"], sc2);
+                svg1.call(installHandlers, data, cs1, cs2, sc1, sc2);
+            });
     }
 
     function drawCircles(svg, data, accX, accY, sc) {
